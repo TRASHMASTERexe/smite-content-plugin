@@ -1,0 +1,29 @@
+player_kills:
+  bbox:
+  - 855
+  - 1214
+  - 23
+  - 26
+  event_type: screen.player_kills
+player_deaths:
+  bbox:
+  - 893
+  - 1215
+  - 23
+  - 24
+  event_type: screen.player_deaths
+  interval: 0.3
+player_assists:
+  bbox:
+  - 933
+  - 1214
+  - 20
+  - 25
+  event_type: screen.player_assists
+game_timer:
+  bbox:
+  - 1212
+  - 8
+  - 140
+  - 34
+  event_type: screen.timer

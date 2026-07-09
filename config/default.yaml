@@ -1,0 +1,35 @@
+# Smite 2 Plugin Base — Default Configuration
+# Edit these values to match your setup.
+
+obs:
+  host: "localhost"
+  port: 4455
+  password: "HRkuqKxb0Fj7CFNb"            # Set in OBS: Tools → WebSocket Server Settings
+
+screen:
+  capture_interval: 1   # Seconds between screen captures
+  monitor: 1              # Monitor index to capture (1 = primary)
+
+audio:
+  sounds_dir: "resources/sounds"    # Relative to project root
+  device: "Speakers (2- VB-Audio Virtual Cable)"  # null = system default
+                                     # For OBS capture: "CABLE Input (VB-Audio Virtual Cable)"
+                                     # Get VB-Audio free at: https://vb-audio.com/Cable
+  master_volume: 0.25                 # Global volume multiplier (0.0–1.0)
+
+text:
+  output_dir: "resources/output"    # Relative to project root
+
+player:
+  name: "TrashMaster.exe"    # Your in-game username (used for kill/death detection)
+
+death_sounds:
+  volume: 1.0             # 0.0 (silent) to 1.0 (full)
+  cooldown: 15
+              # Seconds before another death sound can play (prevents duplicate fires)
+
+hotkeys:
+  ocr_toggle: "ctrl+shift+o"   # Toggle OCR capture on/off (pause between games)
+
+logging:
+  level: "DEBUG"           # DEBUG | INFO | WARNING | ERROR

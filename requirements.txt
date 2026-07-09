@@ -1,0 +1,23 @@
+Pillow>=10.0.0
+
+# Core
+pyyaml>=6.0
+
+# Screen capture
+mss>=9.0.1
+
+# OCR
+easyocr>=1.7.0
+
+# Image pre-processing (improves OCR accuracy)
+opencv-python>=4.8.0
+numpy>=1.24.0
+
+# Hotkeys
+keyboard>=0.13.5
+
+# OBS WebSocket v5
+obsws-python>=1.7.0
+
+# Audio
+pygame>=2.5.0
