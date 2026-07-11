@@ -10,7 +10,6 @@ Normalize both the OCR result and the configured value before comparing.
 """
 
 import re
-import unicodedata
 
 
 def normalize(text: str) -> str:

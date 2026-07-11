@@ -7,7 +7,7 @@ obs:
   password: "HRkuqKxb0Fj7CFNb"            # Set in OBS: Tools → WebSocket Server Settings
 
 screen:
-  capture_interval: 1   # Seconds between screen captures
+  capture_interval: .1   # Seconds between screen captures
   monitor: 1              # Monitor index to capture (1 = primary)
 
 audio:
@@ -23,13 +23,21 @@ text:
 player:
   name: "TrashMaster.exe"    # Your in-game username (used for kill/death detection)
 
+###### DEATH SOUNDS #######
 death_sounds:
-  volume: 1.0             # 0.0 (silent) to 1.0 (full)
-  cooldown: 15
-              # Seconds before another death sound can play (prevents duplicate fires)
+  volume: .25             # 0.0 (silent) to 1.0 (full)
 
+
+###### BLOOD SCREEN KILL STREAK #######
+blood_screen_kill_streak:
+  image_name: "Rage Outline"    # Name of the image in OBS
+  filter_name: "Opacity"    # Name of the filter in OBS applied to the image
+
+
+
+###### UNIVERSAL HOTKEYS #######
 hotkeys:
-  ocr_toggle: "ctrl+shift+o"   # Toggle OCR capture on/off (pause between games)
+  ocr_toggle: "ctrl+shift+o"   # Toggle OCR capture on/off
 
 logging:
   level: "DEBUG"           # DEBUG | INFO | WARNING | ERROR
