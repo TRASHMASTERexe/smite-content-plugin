@@ -31,6 +31,7 @@ class DeathCountProcessor(BaseProcessor):
     def __init__(self):
         super().__init__("death_count_processor")
         self._last: int = -1
+        self._last_5: list[int] = [0, 0, 0, 0, 0]
 
     def setup(self):
         bus.subscribe("screen.player_deaths", self._on_deaths)
@@ -43,23 +44,32 @@ class DeathCountProcessor(BaseProcessor):
         v = _parse_stat(event.data.get("text", ""))
         if v is None:
             return
-
-        if self._last == -1:
+        
+        if self._last == -1 and all(x == 0 for x in self._last_5):
             self._last = v
+            if self._last > 0:
+                self._last_5 = [v, v, v, v, v]
             logger.info(f"DeathCountProcessor baseline: {v}")
             return
+        
+        self._last_5.pop(0)
+        self._last_5.append(v)
 
-        if v == 0 and self._last > 0:
-            logger.info("Death count reset to 0 — new game, resetting baseline")
-            self._last = -1
-            state.player.deaths = 0
-            return
+        most_appearences = max(set(self._last_5), key=self._last_5.count)
+        number_appearences = self._last_5.count(most_appearences)
 
-        if v > self._last:
-            for _ in range(v - self._last):
-                state.player.deaths += 1
-                bus.publish(Event("game.death",
-                    {"victim": "player", "manual": False, "source": "ocr"},
-                    self.name))
-            logger.info(f"Death(s): {self._last}→{v}")
-            self._last = v
+        if number_appearences >= 3:
+            if most_appearences == 0 and self._last > 0:
+                logger.info("Death count reset to 0 — new game, resetting baseline")
+                self._last = 0
+                state.player.deaths = 0
+                return
+
+            if most_appearences < self._last + 3 and most_appearences > self._last:
+                for _ in range(most_appearences - self._last):
+                    state.player.deaths += 1
+                    bus.publish(Event("game.death",
+                        {"victim": "player", "manual": False, "source": "ocr"},
+                        self.name))
+                logger.info(f"Death(s): {self._last}→{most_appearences}")
+                self._last = most_appearences

@@ -12,8 +12,10 @@ PROJECT_ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 from core import config
+from core import timer
 from plugins.death_sounds_plugin import DeathSoundsPlugin
 from plugins.universal_hotkey_plugin import UniversalHotkeysPlugin
+from plugins.blood_screen_kill_streak_plugin import BloodScreenKillStreakPlugin
 
 
 def _plugin_enabled(name: str) -> bool:
@@ -28,6 +30,7 @@ def _plugin_enabled(name: str) -> bool:
 
 def setup_logging(level: str = "INFO"):
     log_level = getattr(logging, level.upper(), logging.INFO)
+    logging.getLogger("obsws").setLevel(logging.WARNING)
     log_dir = os.path.join(os.path.dirname(__file__), "resources", "logs")
     os.makedirs(log_dir, exist_ok=True)
     log_file = os.path.join(log_dir, "app.log")
@@ -66,10 +69,12 @@ def main():
     # -------------------------------------------------------------------------
     death_enabled = _plugin_enabled("death_sounds")
     hotkeys_enabled = _plugin_enabled("universal_hotkeys")
+    blood_screen_enabled = _plugin_enabled("blood_screen_kill_streak")
     logger.info(
-        "Plugin toggles: death_sounds=%s, universal_hotkeys=%s",
+        "Plugin toggles: death_sounds=%s, universal_hotkeys=%s, blood_screen_kill_streak=%s",
         death_enabled,
         hotkeys_enabled,
+        blood_screen_enabled,
     )
 
     plugins = []
@@ -77,6 +82,8 @@ def main():
         plugins.append(DeathSoundsPlugin())
     if hotkeys_enabled:
         plugins.append(UniversalHotkeysPlugin())
+    if blood_screen_enabled:
+        plugins.append(BloodScreenKillStreakPlugin())
 
     logger.info("Loaded plugins: %s", [plugin.name for plugin in plugins])
 
@@ -84,6 +91,7 @@ def main():
         logger.info("Shutting down...")
         for plugin in plugins:
             plugin.stop()
+        timer.stop(cancel_pending=True)
         sys.exit(0)
 
     signal.signal(signal.SIGINT,  shutdown)

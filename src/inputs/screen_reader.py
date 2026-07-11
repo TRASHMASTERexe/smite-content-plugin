@@ -157,7 +157,7 @@ class ScreenReader(BaseInput):
 
         # OTSU auto-picks the best threshold — works well for HUD text with
         # a clear bimodal histogram (bright digits on dark background)
-        _, thresh = cv2.threshold(grey, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        _, thresh = cv2.threshold(grey, 127, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
         return thresh
 
     def _region_interval(self, region: RegionConfig) -> float:
@@ -178,7 +178,7 @@ class ScreenReader(BaseInput):
         img = self._preprocess(img, upscale=is_digit)
 
         if is_digit:
-            result = self._reader.readtext(img, allowlist="0123456789", detail=1)
+            result = self._reader.readtext(img, text_threshold=0.5, low_text=0.4, allowlist="0123456789", detail=1)
         else:
             result = self._reader.readtext(img)
 

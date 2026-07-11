@@ -19,7 +19,8 @@ except ImportError:
     logger.warning("obsws_python not installed — OBS output disabled. Run: pip install obsws-python")
 
 
-COLOR_CORRECTION_FILTER_KIND = "color_filter"
+# OBS 30+ uses color_filter_v2. Older builds may still expose color_filter.
+COLOR_CORRECTION_FILTER_KIND = "color_filter_v2"
 DEFAULT_COLOR_CORRECTION_FILTER_NAME = "Opacity"
 
 
@@ -75,11 +76,11 @@ class OBSOutput(BaseOutput):
     ) -> dict[str, Any]:
         args: dict[str, Any] = {}
         if canvas_uuid is not None:
-            args["canvasUuid"] = canvas_uuid
+            args["canvas_uuid"] = canvas_uuid
         if source_name is not None:
-            args["sourceName"] = source_name
+            args["source_name"] = source_name
         if source_uuid is not None:
-            args["sourceUuid"] = source_uuid
+            args["source_uuid"] = source_uuid
         return args
 
     def _response_value(self, response: Any, key: str, default: Any = None) -> Any:
@@ -172,11 +173,11 @@ class OBSOutput(BaseOutput):
         source_uuid: str | None = None,
         canvas_uuid: str | None = None,
     ) -> Any:
-        return self._request(
-            "get_source_filter",
-            filter_name=filter_name,
-            **self._source_args(source_name=source_name, source_uuid=source_uuid, canvas_uuid=canvas_uuid),
-        )
+        if source_uuid is not None or canvas_uuid is not None:
+            logger.debug(
+                "OBSOutput: source_uuid/canvas_uuid are not supported by this obsws-python version for get_source_filter; using source_name only."
+            )
+        return self._request("get_source_filter", source_name, filter_name)
 
     def get_source_filter_settings(
         self,
@@ -207,13 +208,11 @@ class OBSOutput(BaseOutput):
         canvas_uuid: str | None = None,
         overlay: bool = True,
     ):
-        self._request(
-            "set_source_filter_settings",
-            filter_name=filter_name,
-            filter_settings=dict(settings),
-            overlay=overlay,
-            **self._source_args(source_name=source_name, source_uuid=source_uuid, canvas_uuid=canvas_uuid),
-        )
+        if source_uuid is not None or canvas_uuid is not None:
+            logger.debug(
+                "OBSOutput: source_uuid/canvas_uuid are not supported by this obsws-python version for set_source_filter_settings; using source_name only."
+            )
+        self._request("set_source_filter_settings", source_name, filter_name, dict(settings), overlay=overlay)
 
     def set_source_filter_enabled(
         self,
@@ -224,12 +223,11 @@ class OBSOutput(BaseOutput):
         source_uuid: str | None = None,
         canvas_uuid: str | None = None,
     ):
-        self._request(
-            "set_source_filter_enabled",
-            filter_name=filter_name,
-            filter_enabled=enabled,
-            **self._source_args(source_name=source_name, source_uuid=source_uuid, canvas_uuid=canvas_uuid),
-        )
+        if source_uuid is not None or canvas_uuid is not None:
+            logger.debug(
+                "OBSOutput: source_uuid/canvas_uuid are not supported by this obsws-python version for set_source_filter_enabled; using source_name only."
+            )
+        self._request("set_source_filter_enabled", source_name, filter_name, bool(enabled))
 
     def create_source_filter(
         self,
@@ -241,14 +239,28 @@ class OBSOutput(BaseOutput):
         source_uuid: str | None = None,
         canvas_uuid: str | None = None,
     ):
-        payload = {
-            "filter_name": filter_name,
-            "filter_kind": filter_kind,
-            **self._source_args(source_name=source_name, source_uuid=source_uuid, canvas_uuid=canvas_uuid),
-        }
-        if settings is not None:
-            payload["filter_settings"] = dict(settings)
-        self._request("create_source_filter", **payload)
+        if source_uuid is not None or canvas_uuid is not None:
+            logger.debug(
+                "OBSOutput: source_uuid/canvas_uuid are not supported by this obsws-python version for create_source_filter; using source_name only."
+            )
+
+        created = self._request(
+            "create_source_filter",
+            source_name,
+            filter_name,
+            filter_kind,
+            dict(settings) if settings is not None else None,
+        )
+
+        # Compatibility fallback for older OBS builds.
+        if created is None and filter_kind == "color_filter_v2":
+            self._request(
+                "create_source_filter",
+                source_name,
+                filter_name,
+                "color_filter",
+                dict(settings) if settings is not None else None,
+            )
 
     def ensure_source_filter(
         self,
@@ -309,7 +321,6 @@ class OBSOutput(BaseOutput):
         self,
         source_name: str,
         opacity: float,
-        *,
         filter_name: str = DEFAULT_COLOR_CORRECTION_FILTER_NAME,
         source_uuid: str | None = None,
         canvas_uuid: str | None = None,

@@ -32,6 +32,7 @@ class KillCountProcessor(BaseProcessor):
         super().__init__("kill_count_processor")
         self.player_name = player_name
         self._last: int = -1
+        self._last_5: list[int] = [0,0,0,0,0]
 
     def setup(self):
         bus.subscribe("screen.player_kills", self._on_kills)
@@ -45,22 +46,31 @@ class KillCountProcessor(BaseProcessor):
         if v is None:
             return
 
-        if self._last == -1:
+        if self._last == -1 and all(x == 0 for x in self._last_5):
             self._last = v
+            if self._last > 0:
+                self._last_5 = [v, v, v, v, v]
             logger.info(f"KillCountProcessor baseline: {v}")
             return
+        
+        self._last_5.pop(0)
+        self._last_5.append(v)
 
-        if v == 0 and self._last > 0:
-            logger.info("Kill count reset to 0 — new game, resetting baseline")
-            self._last = -1
-            state.player.kills = 0
-            return
+        most_appearences = max(set(self._last_5), key=self._last_5.count)
+        number_appearences = self._last_5.count(most_appearences)
 
-        if v > self._last:
-            for _ in range(v - self._last):
-                state.player.kills += 1
-                bus.publish(Event("game.kill",
-                    {"killer": self.player_name, "victim": "", "manual": False, "source": "ocr"},
-                    self.name))
-            logger.info(f"Kill(s): {self._last}→{v}")
-            self._last = v
+        if number_appearences >= 3:
+            if most_appearences == 0 and self._last > 0:
+                logger.info("Kill count reset to 0 — new game, resetting baseline")
+                self._last = 0
+                state.player.kills = 0
+                return
+
+            if most_appearences < self._last + 3 and most_appearences > self._last:
+                for _ in range(most_appearences - self._last):
+                    state.player.kills += 1
+                    bus.publish(Event("game.kill",
+                        {"victim": "player", "manual": False, "source": "ocr"},
+                        self.name))
+                logger.info(f"Kill(s): {self._last}→{most_appearences}")
+                self._last = most_appearences
